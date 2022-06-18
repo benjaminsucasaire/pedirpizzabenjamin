@@ -4,9 +4,37 @@ frameworkVersion: '2'
 
 provider:
   name: aws
-  runtime: nodejs12.x
-
+  runtime: nodejs14.x
+  region: us-west-2
+  environment:
+    REGION: ${self:provider.region}
+    PENDING_ORDER_QUEUE:
+      Ref: PendingOrdersQueue
+    PENDING_ORDER_QUEUE_NAME: PendingOrdersQueue
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "sqs:SendMessage"
+      Resource: "arn:aws:sqs:${self:provider.region}:*:${self:provider.environment.PENDING_ORDER_QUEUE_NAME}"
 functions:
-  hello:
-    handler: handler.hello
-
+  hacerPedido:
+    handler: handler.hacerPedido
+    events:
+      - http:
+          method: post
+          path: pedido
+  prepararPedido:
+    handler: handler.prepararPedido
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - PendingOrdersQueue
+              - Arn
+          batchSize: 1
+resources:
+  Resources:
+    PendingOrdersQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:provider.environment.PENDING_ORDER_QUEUE_NAME}
