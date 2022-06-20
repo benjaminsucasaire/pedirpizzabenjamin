@@ -1,5 +1,5 @@
 # pedirpizzabenjamin
-pedirpizzabenjamin$
+![diagrama](https://user-images.githubusercontent.com/30125298/174509606-3a35c51f-d076-4faf-aa4c-1aec781724a1.png)
 
 
 # prerequisitos
