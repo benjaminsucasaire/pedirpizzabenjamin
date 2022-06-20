@@ -14,7 +14,7 @@ module.exports.hacerPedido = (event, context, callback) => {
 	const body = JSON.parse(event.body);
 
 	const order = {
-		OrderId: uuidv4(),
+		orderId: uuidv4(),
 		name: body.name,
 		address: body.address,
 		pizzas: body.pizzas,
@@ -55,6 +55,49 @@ module.exports.prepararPedido = (event, context, callback) => {
 			console.log('error benjamin');
 		});
 };
+module.exports.enviarPedido = (event, context, callback) => {
+	console.log('enviarPedido fue llamada');
+
+	const record = event.Records[0];
+	if (record.eventName === 'INSERT') {
+		console.log('deliverOrder');
+
+		const orderId = record.dynamodb.Keys.orderId.S;
+
+		orderMetadataManager
+			.deliverOrder(orderId)
+			.then(data => {
+				console.log(data);
+				callback();
+			})
+			.catch(error => {
+				callback(error);
+			});
+	} else {
+		console.log('is not a new record');
+		callback();
+	}
+};
+
+module.exports.estadoPedido = (event, context, callback) => {
+	console.log('Estado pedido fue llamado');
+
+	const orderId = event.pathParameters && event.pathParameters.orderId;
+	if (orderId !== null) {
+		orderMetadataManager
+			.getOrder(orderId)
+			.then(order => {
+				sendResponse(200, `El estado de la orden: ${orderId} es ${order.delivery_status}`, callback);
+			})
+			.catch(error => {
+				sendResponse(500, 'Hubo un error al procesar el pedido', callback);
+			});
+	} else {
+		sendResponse(400, 'Falta el orderId', callback);
+	}
+};
+
+
 
 function sendResponse(statusCode, message, callback) {
 	const response = {
